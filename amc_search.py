@@ -7,13 +7,13 @@ import numpy as np
 import argparse
 from copy import deepcopy
 import torch
-torch.backends.cudnn.deterministic = True
-
 from env.channel_pruning_env import ChannelPruningEnv
 from lib.agent import DDPG
 from lib.utils import get_output_folder
 
 from tensorboardX import SummaryWriter
+
+torch.backends.cudnn.deterministic = True
 
 
 def parse_args():
@@ -154,11 +154,11 @@ def train(num_episode, agent, env, output):
                 if episode > args.warmup:
                     agent.update_policy()
 
-            #agent.memory.append(
+            # agent.memory.append(
             #    observation,
             #    agent.select_action(observation, episode=episode),
             #    0., False
-            #)
+            # )
 
             # reset
             observation = None
@@ -190,7 +190,7 @@ def export_model(env, args):
     if args.ratios:
         ratios = args.ratios.split(',')
         ratios = [float(r) for r in ratios]
-        assert  len(ratios) == len(env.org_channels)
+        assert len(ratios) == len(env.org_channels)
         channels = [int(r * c) for r, c in zip(ratios, env.org_channels)]
     else:
         channels = args.channels.split(',')
