@@ -3,6 +3,8 @@
 # {jilin, songhan}@mit.edu
 
 import os
+import shutil
+
 import torch
 import time
 import sys
@@ -168,7 +170,7 @@ def get_output_folder(parent_dir, env_name):
 
 
 # Custom progress bar
-_, term_width = os.popen('stty size', 'r').read().split()
+_, term_width = shutil.get_terminal_size()
 term_width = int(term_width)
 TOTAL_BAR_LENGTH = 40.
 last_time = time.time()

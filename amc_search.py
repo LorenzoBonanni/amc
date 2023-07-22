@@ -66,7 +66,7 @@ def parse_args():
     parser.add_argument('--epsilon', default=50000, type=int, help='linear decay of exploration policy')
     parser.add_argument('--seed', default=None, type=int, help='random seed to set')
     parser.add_argument('--n_gpu', default=1, type=int, help='number of gpu to use')
-    parser.add_argument('--n_worker', default=16, type=int, help='number of data loader worker')
+    parser.add_argument('--n_worker', default=2, type=int, help='number of data loader worker')
     parser.add_argument('--data_bsize', default=50, type=int, help='number of data batch size')
     parser.add_argument('--resume', default='default', type=str, help='Resuming model path for testing')
     # export
@@ -85,6 +85,8 @@ def get_model_and_checkpoint(model, dataset, checkpoint_path, n_gpu=1):
     elif model == 'mobilenetv2' and dataset == 'imagenet':
         from models.mobilenet_v2 import MobileNetV2
         net = MobileNetV2(n_class=1000)
+    elif model == 'efficentnet_b4' and dataset == 'imagenet':
+        net = torch.hub.load('NVIDIA/DeepLearningExamples:torchhub', 'nvidia_efficientnet_b4', pretrained=True)
     else:
         raise NotImplementedError
     sd = torch.load(checkpoint_path)
@@ -92,7 +94,7 @@ def get_model_and_checkpoint(model, dataset, checkpoint_path, n_gpu=1):
         sd = sd['state_dict']
     sd = {k.replace('module.', ''): v for k, v in sd.items()}
     net.load_state_dict(sd)
-    net = net.cuda()
+    # net = net.cuda()
     if n_gpu > 1:
         net = torch.nn.DataParallel(net, range(n_gpu))
 
