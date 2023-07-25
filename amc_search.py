@@ -89,11 +89,11 @@ def get_model_and_checkpoint(model, dataset, checkpoint_path, n_gpu=1):
         net = torch.hub.load('NVIDIA/DeepLearningExamples:torchhub', 'nvidia_efficientnet_b4', pretrained=True)
     else:
         raise NotImplementedError
-    sd = torch.load(checkpoint_path)
-    if 'state_dict' in sd:  # a checkpoint but not a state_dict
-        sd = sd['state_dict']
-    sd = {k.replace('module.', ''): v for k, v in sd.items()}
-    net.load_state_dict(sd)
+    # sd = torch.load(checkpoint_path)
+    # if 'state_dict' in sd:  # a checkpoint but not a state_dict
+    #     sd = sd['state_dict']
+    # sd = {k.replace('module.', ''): v for k, v in sd.items()}
+    # net.load_state_dict(sd)
     # net = net.cuda()
     if n_gpu > 1:
         net = torch.nn.DataParallel(net, range(n_gpu))
@@ -217,7 +217,6 @@ if __name__ == "__main__":
 
     model, checkpoint = get_model_and_checkpoint(args.model, args.dataset, checkpoint_path=args.ckpt_path,
                                                  n_gpu=args.n_gpu)
-
     env = ChannelPruningEnv(model, checkpoint, args.dataset,
                             preserve_ratio=1. if args.job == 'export' else args.preserve_ratio,
                             n_data_worker=args.n_worker, batch_size=args.data_bsize,
