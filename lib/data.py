@@ -16,16 +16,19 @@ from torch.utils.data import Dataset
 from torch.utils.data.sampler import SubsetRandomSampler
 from torchvision.io import read_image
 
+from lib.classes import IMAGENET2012_CLASSES, TEST_FILE_TO_ID, IMAGENET_2012_LABELS
+
 
 class MyDataset(Dataset):
     def __init__(self, image_paths, transform=None):
         self.base_path = image_paths
         self.image_names = os.listdir(image_paths)
         self.transform = transform
-        self.get_class_label = self.get_class_label_test if 'val' in image_paths else self.get_class_label_train
+        self.get_class_label = self.get_class_label_test if 'test' in image_paths else self.get_class_label_train
 
     def get_class_label_test(self, image_name):
-        y = ...
+        label_id = image_name.split('_')[-1].split('.')[0]
+        y = IMAGENET2012_CLASSES[label_id]
         return y
 
     def get_class_label_train(self, image_name):
@@ -42,6 +45,34 @@ class MyDataset(Dataset):
 
     def __len__(self):
         return len(self.base_path)
+
+    class MyDataset(Dataset):
+        def __init__(self, image_paths, transform=None):
+            self.base_path = image_paths
+            self.image_names = os.listdir(image_paths)
+            self.transform = transform
+            self.get_class_label = self.get_class_label_test if 'test' in image_paths else self.get_class_label_train
+
+        def get_class_label_test(self, image_name):
+            label_id = image_name.split('_')[-1].split('.')[0]
+            y = IMAGENET2012_CLASSES[label_id]
+            return y
+
+        def get_class_label_train(self, image_name):
+            label_id = TEST_FILE_TO_ID[image_name]
+            y = IMAGENET_2012_LABELS[label_id]
+            return y
+
+        def __getitem__(self, index):
+            image_path = self.base_path + '/' + self.image_names[index]
+            x = read_image(image_path)
+            y = self.get_class_label(image_path.split('/')[-1])
+            if self.transform is not None:
+                x = self.transform(x)
+            return x, y
+
+        def __len__(self):
+            return len(self.base_path)
 
 
 def get_dataset(dset_name, batch_size, n_worker, data_root='../../data'):
