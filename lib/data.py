@@ -3,7 +3,7 @@
 # {jilin, songhan}@mit.edu
 
 import os
-
+import random
 import numpy as np
 import torch
 import torch.nn.parallel
@@ -32,7 +32,7 @@ class MyDataset(Dataset):
         return y
 
     def get_class_label_train(self, image_name):
-        y = ...
+        y = IMAGENET_2012_LABELS[TEST_FILE_TO_ID[image_name]]
         return y
 
     def __getitem__(self, index):
@@ -72,7 +72,7 @@ class MyDataset(Dataset):
             return x, y
 
         def __len__(self):
-            return len(self.base_path)
+            return len(self.image_names)
 
 
 def get_dataset(dset_name, batch_size, n_worker, data_root='../../data'):
@@ -187,44 +187,33 @@ def get_split_dataset(dset_name, batch_size, n_worker, val_size, data_root='../d
         val_loader = torch.utils.data.DataLoader(valset, batch_size=batch_size, shuffle=False, sampler=val_sampler,
                                                  num_workers=n_worker, pin_memory=True)
         n_class = 10
-
     elif dset_name == 'imagenet':
-        train_dir = os.path.join(data_root, 'test')
-        val_dir = os.path.join(data_root, 'val')
-        transform = torch.hub.load('NVIDIA/DeepLearningExamples:torchhub', 'nvidia_convnets_processing_utils')
-        print(transform)
-        trainset = datasets.ImageFolder(train_dir, transform)
-        if use_real_val:
-            valset = datasets.ImageFolder(val_dir, transform)
-            n_val = len(valset)
-            assert val_size < n_val
-            indices = list(range(n_val))
-            np.random.shuffle(indices)
-            _, val_idx = indices[val_size:], indices[:val_size]
-            train_idx = list(range(len(trainset)))  # all trainset
-        else:
-            valset = datasets.ImageFolder(train_dir, transform)
-            n_train = len(trainset)
-            indices = list(range(n_train))
-            np.random.shuffle(indices)
-            assert val_size < n_train
-            train_idx, val_idx = indices[val_size:], indices[:val_size]
+        train_dir = os.path.join(data_root, 'train')
+        test_dir = os.path.join(data_root, 'test')
+        # transform = torch.hub.load('NVIDIA/DeepLearningExamples:torchhub', 'nvidia_convnets_processing_utils')
+        transform = torch.nn.Sequential(
+            transforms.Resize(380),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                 std=[0.229, 0.224, 0.225])
+        )
+        train_dataset = MyDataset(train_dir, transform)
+        d = MyDataset(test_dir, transform)
+        # random.shuffle(d.image_names)
+        i_names = d.image_names
+        # test_data = i_names[:int(len(i_names) * 0.9)]
+        val_data = i_names[int(len(i_names) * 0.9):]
+        # test_dataset = MyDataset(test_dir, transform)
+        # test_dataset.image_names = test_data
+        val_dataset = MyDataset(test_dir, transform)
+        val_dataset.image_names = val_data
 
-        train_sampler = index_sampler(train_idx)
-        val_sampler = index_sampler(val_idx)
-
-        train_loader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, sampler=train_sampler,
-                                                   num_workers=n_worker, pin_memory=True)
-        val_loader = torch.utils.data.DataLoader(valset, batch_size=batch_size, sampler=val_sampler,
-                                                 num_workers=n_worker, pin_memory=True)
+        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, num_workers=n_worker,
+                                                   pin_memory=True)
+        val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, num_workers=n_worker,
+                                                 pin_memory=True)
 
         n_class = 1000
     else:
         raise NotImplementedError
 
     return train_loader, val_loader, n_class
-
-
-if __name__ == '__main__':
-    d = MyDataset('../imagenet/val')
-    a = d[0]
