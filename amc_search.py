@@ -87,6 +87,8 @@ def get_model_and_checkpoint(model, dataset, checkpoint_path, n_gpu=1):
         net = MobileNetV2(n_class=1000)
     elif model == 'efficentnet_b4' and dataset == 'imagenet':
         net = torch.hub.load('NVIDIA/DeepLearningExamples:torchhub', 'nvidia_efficientnet_b4', pretrained=True)
+        # utils = torch.hub.load('NVIDIA/DeepLearningExamples:torchhub', 'nvidia_convnets_processing_utils')
+        # print(utils)
     else:
         raise NotImplementedError
     # sd = torch.load(checkpoint_path)

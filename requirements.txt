@@ -4,3 +4,4 @@ scipy==1.11.1
 tensorboardX==2.6.1
 torch==2.0.1
 torchvision==0.15.2
+validators==0.20.0
