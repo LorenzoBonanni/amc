@@ -26,11 +26,6 @@ class MyDataset(Dataset):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.labeltoid = labeltoid
 
-    def get_class_label(self, image_name):
-        label_id = image_name.split('_')[0]
-        y = IMAGENET2012_CLASSES[label_id]
-        return y
-
     def __getitem__(self, index):
         image_path = self.base_path + '/' + self.image_names[index]
         x = Image.open(image_path)
@@ -38,12 +33,12 @@ class MyDataset(Dataset):
         if x_np.ndim == 2:
             x = Image.merge('RGB', (x, x, x))
         if 'train' in self.base_path:
-            y = self.get_class_label(image_path.split('/')[-1])
+            y = IMAGENET2012_CLASSES[image_path.split('/')[-1].split('_')[0]]
         else:
-            y = self.get_class_label(image_path.split('_')[-1].split('.')[0])
+            y = IMAGENET2012_CLASSES[image_path.split('_')[-1].split('.')[0]]
         label_id = self.labeltoid[y]
-        y = torch.zeros((1, 1000))
-        y[0][label_id] = 1
+        y = torch.zeros(1000)
+        y[label_id] = 1
         if self.transform is not None:
             x = self.transform(x)
             x = x.convert_to_tensors('pt')
