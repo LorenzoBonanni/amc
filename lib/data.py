@@ -40,7 +40,7 @@ class MyDataset(Dataset):
         if 'train' in self.base_path:
             y = self.get_class_label(image_path.split('/')[-1])
         else:
-            y = image_path.split('_')[-1].split('.')[0]
+            y = self.get_class_label(image_path.split('_')[-1].split('.')[0])
         y = torch.as_tensor(self.labeltoid[y])
         if self.transform is not None:
             x = self.transform(x)
