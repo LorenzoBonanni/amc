@@ -3,19 +3,18 @@
 # {jilin, songhan}@mit.edu
 
 import os
-import random
+
 import numpy as np
 import torch
 import torch.nn.parallel
 import torch.optim
 import torch.utils.data
 import torchvision
-import torchvision.datasets as datasets
 import torchvision.transforms as transforms
 from torch.utils.data import Dataset
 from torch.utils.data.sampler import SubsetRandomSampler
-from torchvision.io import read_image
-
+from transformers import EfficientNetImageProcessor
+from PIL import Image
 from lib.classes import IMAGENET2012_CLASSES
 
 
@@ -24,15 +23,16 @@ class MyDataset(Dataset):
         self.base_path = image_paths
         self.image_names = os.listdir(image_paths)
         self.transform = transform
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     def get_class_label(self, image_name):
-        label_id = image_name.split('_')[-1].split('.')[0]
+        label_id = image_name.split('_')[0]
         y = IMAGENET2012_CLASSES[label_id]
         return y
 
     def __getitem__(self, index):
         image_path = self.base_path + '/' + self.image_names[index]
-        x = read_image(image_path)
+        x = Image.open(image_path)
         y = self.get_class_label(image_path.split('/')[-1])
         if self.transform is not None:
             x = self.transform(x)
@@ -65,34 +65,24 @@ def get_dataset(dset_name, batch_size, n_worker, data_root='../../data'):
                                                  num_workers=n_worker, pin_memory=True)
         n_class = 10
     elif dset_name == 'imagenet':
-        # get dir
-        traindir = os.path.join(data_root, 'train')
-        valdir = os.path.join(data_root, 'val')
+        train_dir = os.path.join(data_root, 'train')
+        val_dir = os.path.join(data_root, 'val')
+        # transform = torchvision.transforms.Compose([
+        #     transforms.Resize(380),
+        #     transforms.Normalize(mean=[0.485, 0.456, 0.406],
+        #                          std=[0.229, 0.224, 0.225]),
+        #     # transforms.ToTensor()
+        # ]
+        # )
+        transform = EfficientNetImageProcessor.from_pretrained("google/efficientnet-b4")
+        train_dataset = MyDataset(train_dir, transform)
+        val_dataset = MyDataset(val_dir, transform)
 
-        # preprocessing
-        input_size = 224
-        imagenet_tran_train = [
-            transforms.RandomResizedCrop(input_size, scale=(0.2, 1.0)),
-            transforms.RandomHorizontalFlip(),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-        ]
-        imagenet_tran_test = [
-            transforms.Resize(int(input_size / 0.875)),
-            transforms.CenterCrop(input_size),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-        ]
+        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, num_workers=n_worker,
+                                                   pin_memory=True, shuffle=True)
+        val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, num_workers=n_worker,
+                                                 pin_memory=True, shuffle=True)
 
-        train_loader = torch.utils.data.DataLoader(
-            datasets.ImageFolder(traindir, transforms.Compose(imagenet_tran_train)),
-            batch_size=batch_size, shuffle=True,
-            num_workers=n_worker, pin_memory=True, sampler=None)
-
-        val_loader = torch.utils.data.DataLoader(
-            datasets.ImageFolder(valdir, transforms.Compose(imagenet_tran_test)),
-            batch_size=batch_size, shuffle=False,
-            num_workers=n_worker, pin_memory=True)
         n_class = 1000
 
     else:
@@ -157,12 +147,7 @@ def get_split_dataset(dset_name, batch_size, n_worker, val_size, data_root='../d
     elif dset_name == 'imagenet':
         train_dir = os.path.join(data_root, 'train')
         val_dir = os.path.join(data_root, 'val')
-        # transform = torch.hub.load('NVIDIA/DeepLearningExamples:torchhub', 'nvidia_convnets_processing_utils')
-        transform = torch.nn.Sequential(
-            transforms.Resize(380),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                 std=[0.229, 0.224, 0.225])
-        )
+        transform = EfficientNetImageProcessor.from_pretrained("google/efficientnet-b4")
         train_dataset = MyDataset(train_dir, transform)
         val_dataset = MyDataset(val_dir, transform)
 

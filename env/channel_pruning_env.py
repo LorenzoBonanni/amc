@@ -543,7 +543,7 @@ class ChannelPruningEnv:
 
         self.layer_embedding = layer_embedding
 
-    def _validate(self, val_loader, model, verbose=False):
+    def _validate(self, val_loader, model, verbose=True):
         '''
         Validate the performance on validation set
         :param val_loader:

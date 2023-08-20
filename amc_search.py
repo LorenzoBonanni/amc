@@ -2,16 +2,18 @@
 # Yihui He*, Ji Lin*, Zhijian Liu, Hanrui Wang, Li-Jia Li, Song Han
 # {jilin, songhan}@mit.edu
 
-import os
-import numpy as np
 import argparse
+import os
 from copy import deepcopy
+
+import numpy as np
 import torch
+from tensorboardX import SummaryWriter
+from transformers import EfficientNetForImageClassification
+
 from env.channel_pruning_env import ChannelPruningEnv
 from lib.agent import DDPG
 from lib.utils import get_output_folder
-
-from tensorboardX import SummaryWriter
 
 torch.backends.cudnn.deterministic = True
 
@@ -86,7 +88,8 @@ def get_model_and_checkpoint(model, dataset, checkpoint_path, n_gpu=1):
         from models.mobilenet_v2 import MobileNetV2
         net = MobileNetV2(n_class=1000)
     elif model == 'efficentnet_b4' and dataset == 'imagenet':
-        net = torch.hub.load('NVIDIA/DeepLearningExamples:torchhub', 'nvidia_efficientnet_b4', pretrained=True)
+        # net = torch.hub.load('NVIDIA/DeepLearningExamples:torchhub', 'nvidia_efficientnet_b4', pretrained=True)
+        net = EfficientNetForImageClassification.from_pretrained("google/efficientnet-b4")
         # utils = torch.hub.load('NVIDIA/DeepLearningExamples:torchhub', 'nvidia_convnets_processing_utils')
         # print(utils)
     else:
