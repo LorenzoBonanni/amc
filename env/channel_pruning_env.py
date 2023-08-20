@@ -414,6 +414,7 @@ class ChannelPruningEnv:
         print('=> Extracting information...')
         with torch.no_grad():
             for i_b, (input, target) in enumerate(self.train_loader):  # use image from train set
+                print(f"\t=>BATCH {i_b}/{self.n_calibration_batches}")
                 if i_b == self.n_calibration_batches:
                     break
                 self.data_saver.append((input.clone(), target.clone()))
@@ -551,6 +552,7 @@ class ChannelPruningEnv:
         :param verbose:
         :return:
         '''
+        print('=> Validating Performance...')
         batch_time = AverageMeter()
         losses = AverageMeter()
         top1 = AverageMeter()

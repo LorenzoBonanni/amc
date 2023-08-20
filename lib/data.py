@@ -37,7 +37,10 @@ class MyDataset(Dataset):
         x_np = np.asarray(x)
         if x_np.ndim == 2:
             x = Image.merge('RGB', (x, x, x))
-        y = self.get_class_label(image_path.split('/')[-1])
+        if 'train' in self.base_path:
+            y = self.get_class_label(image_path.split('/')[-1])
+        else:
+            y = image_path.split('_')[-1].split('.')[0]
         y = torch.as_tensor(self.labeltoid[y])
         if self.transform is not None:
             x = self.transform(x)
