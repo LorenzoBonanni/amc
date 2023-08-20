@@ -572,7 +572,7 @@ class ChannelPruningEnv:
                 target_var = torch.autograd.Variable(target).cuda()
                 input_var = input_var.squeeze(1)
                 # compute output
-                output = model(input_var)
+                output = model(input_var).logits
                 loss = criterion(output, target_var)
 
                 # measure accuracy and record loss
