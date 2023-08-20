@@ -41,7 +41,9 @@ class MyDataset(Dataset):
             y = self.get_class_label(image_path.split('/')[-1])
         else:
             y = self.get_class_label(image_path.split('_')[-1].split('.')[0])
-        y = torch.as_tensor(self.labeltoid[y])
+        label_id = self.labeltoid[y]
+        y = torch.zeros((1, 1000))
+        y[0][label_id] = 1
         if self.transform is not None:
             x = self.transform(x)
             x = x.convert_to_tensors('pt')
