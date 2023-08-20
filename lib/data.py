@@ -16,7 +16,7 @@ from torch.utils.data import Dataset
 from torch.utils.data.sampler import SubsetRandomSampler
 from torchvision.io import read_image
 
-from lib.classes import IMAGENET2012_CLASSES, TEST_FILE_TO_ID, IMAGENET_2012_LABELS
+from lib.classes import IMAGENET2012_CLASSES
 
 
 class MyDataset(Dataset):
@@ -24,15 +24,10 @@ class MyDataset(Dataset):
         self.base_path = image_paths
         self.image_names = os.listdir(image_paths)
         self.transform = transform
-        self.get_class_label = self.get_class_label_test if 'test' in image_paths else self.get_class_label_train
 
-    def get_class_label_test(self, image_name):
+    def get_class_label(self, image_name):
         label_id = image_name.split('_')[-1].split('.')[0]
         y = IMAGENET2012_CLASSES[label_id]
-        return y
-
-    def get_class_label_train(self, image_name):
-        y = IMAGENET_2012_LABELS[TEST_FILE_TO_ID[image_name]]
         return y
 
     def __getitem__(self, index):
@@ -44,35 +39,7 @@ class MyDataset(Dataset):
         return x, y
 
     def __len__(self):
-        return len(self.base_path)
-
-    class MyDataset(Dataset):
-        def __init__(self, image_paths, transform=None):
-            self.base_path = image_paths
-            self.image_names = os.listdir(image_paths)
-            self.transform = transform
-            self.get_class_label = self.get_class_label_test if 'test' in image_paths else self.get_class_label_train
-
-        def get_class_label_test(self, image_name):
-            label_id = image_name.split('_')[-1].split('.')[0]
-            y = IMAGENET2012_CLASSES[label_id]
-            return y
-
-        def get_class_label_train(self, image_name):
-            label_id = TEST_FILE_TO_ID[image_name]
-            y = IMAGENET_2012_LABELS[label_id]
-            return y
-
-        def __getitem__(self, index):
-            image_path = self.base_path + '/' + self.image_names[index]
-            x = read_image(image_path)
-            y = self.get_class_label(image_path.split('/')[-1])
-            if self.transform is not None:
-                x = self.transform(x)
-            return x, y
-
-        def __len__(self):
-            return len(self.image_names)
+        return len(self.image_names)
 
 
 def get_dataset(dset_name, batch_size, n_worker, data_root='../../data'):
@@ -189,7 +156,7 @@ def get_split_dataset(dset_name, batch_size, n_worker, val_size, data_root='../d
         n_class = 10
     elif dset_name == 'imagenet':
         train_dir = os.path.join(data_root, 'train')
-        test_dir = os.path.join(data_root, 'test')
+        val_dir = os.path.join(data_root, 'val')
         # transform = torch.hub.load('NVIDIA/DeepLearningExamples:torchhub', 'nvidia_convnets_processing_utils')
         transform = torch.nn.Sequential(
             transforms.Resize(380),
@@ -197,20 +164,12 @@ def get_split_dataset(dset_name, batch_size, n_worker, val_size, data_root='../d
                                  std=[0.229, 0.224, 0.225])
         )
         train_dataset = MyDataset(train_dir, transform)
-        d = MyDataset(test_dir, transform)
-        # random.shuffle(d.image_names)
-        i_names = d.image_names
-        # test_data = i_names[:int(len(i_names) * 0.9)]
-        val_data = i_names[int(len(i_names) * 0.9):]
-        # test_dataset = MyDataset(test_dir, transform)
-        # test_dataset.image_names = test_data
-        val_dataset = MyDataset(test_dir, transform)
-        val_dataset.image_names = val_data
+        val_dataset = MyDataset(val_dir, transform)
 
         train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, num_workers=n_worker,
-                                                   pin_memory=True)
+                                                   pin_memory=True, shuffle=True)
         val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, num_workers=n_worker,
-                                                 pin_memory=True)
+                                                 pin_memory=True, shuffle=True)
 
         n_class = 1000
     else:
