@@ -34,12 +34,15 @@ class MyDataset(Dataset):
     def __getitem__(self, index):
         image_path = self.base_path + '/' + self.image_names[index]
         x = Image.open(image_path)
+        x_np = np.asarray(x)
+        if x_np.ndim == 2:
+            print("ERROR")
         y = self.get_class_label(image_path.split('/')[-1])
-        y = torch.as_tensor(self.labeltoid(y))
+        y = torch.as_tensor(self.labeltoid[y])
         if self.transform is not None:
             x = self.transform(x)
-        x = x.convert_to_tensors(tensor_type=torch.double)
-
+            x = x.convert_to_tensors('pt')
+            x = x['pixel_values']
         return x, y
 
     def __len__(self):
