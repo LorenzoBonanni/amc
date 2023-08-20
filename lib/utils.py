@@ -110,9 +110,17 @@ def measure_layer_for_pruning(layer, x):
 
     # ops_conv
     if type_name in ['Conv2d']:
-        out_h = int((x.size()[2] + 2 * layer.padding[0] - layer.kernel_size[0]) /
+        if isinstance(layer.padding, str):
+            if layer.padding == 'valid':
+                padding = [0, 0]
+            elif layer.padding == 'same':
+                padding = [
+                    layer.dilation[0] * (layer.kernel_size[0] - 1) // 2,
+                    layer.dilation[1] * (layer.kernel_size[1] - 1) // 2
+                ]
+        out_h = int((x.size()[2] + 2 * padding[0] - layer.kernel_size[0]) /
                     layer.stride[0] + 1)
-        out_w = int((x.size()[3] + 2 * layer.padding[1] - layer.kernel_size[1]) /
+        out_w = int((x.size()[3] + 2 * padding[1] - layer.kernel_size[1]) /
                     layer.stride[1] + 1)
         layer.flops = layer.in_channels * layer.out_channels * layer.kernel_size[0] *  \
                     layer.kernel_size[1] * out_h * out_w / layer.groups * multi_add

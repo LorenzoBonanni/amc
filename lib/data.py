@@ -86,9 +86,9 @@ def get_dataset(net, dset_name, batch_size, n_worker, data_root='../../data'):
         val_dataset = MyDataset(image_paths=val_dir, transform=transform, labeltoid=net.config.label2id)
 
         train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, num_workers=n_worker,
-                                                   pin_memory=True, shuffle=True)
+                                                   pin_memory=False, shuffle=True)
         val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, num_workers=n_worker,
-                                                 pin_memory=True, shuffle=True)
+                                                 pin_memory=False, shuffle=True)
 
         n_class = 1000
 

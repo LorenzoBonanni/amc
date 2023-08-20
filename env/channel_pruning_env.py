@@ -416,11 +416,9 @@ class ChannelPruningEnv:
             for i_b, (input, target) in enumerate(self.train_loader):  # use image from train set
                 if i_b == self.n_calibration_batches:
                     break
-                input_copy = [i.clone() for i in input]
-                target_copy = [t.clone() for t in target]
-                self.data_saver.append((input_copy, target_copy))
+                self.data_saver.append((input.clone(), target.clone()))
                 input_var = torch.autograd.Variable(input).cuda()
-
+                input_var = input_var.squeeze(1)
                 # inference and collect stats
                 _ = self.model(input_var)
 
