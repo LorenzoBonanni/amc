@@ -200,10 +200,10 @@ if __name__ == '__main__':
         torch.cuda.manual_seed(args.seed)
 
     print('=> Preparing data..')
-    train_loader, val_loader, n_class = get_dataset(args.dataset, args.batch_size, args.n_worker,
-                                                    data_root=args.data_root)
 
     net = get_model()  # for measure
+    train_loader, val_loader, n_class = get_dataset(net, args.dataset, args.batch_size, args.n_worker,
+                                                    data_root=args.data_root)
     IMAGE_SIZE = 224 if args.dataset == 'imagenet' else 32
     n_flops, n_params = measure_model(net, IMAGE_SIZE, IMAGE_SIZE)
     print('=> Model Parameter: {:.3f} M, FLOPs: {:.3f}M'.format(n_params / 1e6, n_flops / 1e6))

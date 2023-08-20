@@ -35,17 +35,18 @@ class MyDataset(Dataset):
         image_path = self.base_path + '/' + self.image_names[index]
         x = Image.open(image_path)
         y = self.get_class_label(image_path.split('/')[-1])
+        y = torch.as_tensor(self.labeltoid(y))
         if self.transform is not None:
             x = self.transform(x)
         x = x.convert_to_tensors(tensor_type=torch.double)
-        y = torch.as_tensor(self.labeltoid(y))
+
         return x, y
 
     def __len__(self):
         return len(self.image_names)
 
 
-def get_dataset(dset_name, batch_size, n_worker, data_root='../../data'):
+def get_dataset(net, dset_name, batch_size, n_worker, data_root='../../data'):
     cifar_tran_train = [
         transforms.RandomCrop(32, padding=4),
         transforms.RandomHorizontalFlip(),
@@ -78,8 +79,8 @@ def get_dataset(dset_name, batch_size, n_worker, data_root='../../data'):
         # ]
         # )
         transform = EfficientNetImageProcessor.from_pretrained("google/efficientnet-b4")
-        train_dataset = MyDataset(train_dir, transform)
-        val_dataset = MyDataset(val_dir, transform)
+        train_dataset = MyDataset(image_paths=train_dir, transform=transform, labeltoid=net.config.label2id)
+        val_dataset = MyDataset(image_paths=val_dir, transform=transform, labeltoid=net.config.label2id)
 
         train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, num_workers=n_worker,
                                                    pin_memory=True, shuffle=True)
@@ -151,8 +152,8 @@ def get_split_dataset(net, dset_name, batch_size, n_worker, val_size, data_root=
         train_dir = os.path.join(data_root, 'train')
         val_dir = os.path.join(data_root, 'val')
         transform = EfficientNetImageProcessor.from_pretrained("google/efficientnet-b4")
-        train_dataset = MyDataset(train_dir, transform, net.config.label2id)
-        val_dataset = MyDataset(val_dir, transform, net.config.label2id)
+        train_dataset = MyDataset(image_paths=train_dir, transform=transform, labeltoid=net.config.label2id)
+        val_dataset = MyDataset(image_paths=val_dir, transform=transform, labeltoid=net.config.label2id)
 
         train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, num_workers=n_worker,
                                                    pin_memory=True, shuffle=True)
