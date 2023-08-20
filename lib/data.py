@@ -36,7 +36,7 @@ class MyDataset(Dataset):
         x = Image.open(image_path)
         x_np = np.asarray(x)
         if x_np.ndim == 2:
-            print("ERROR")
+            x = Image.merge('RGB', (x, x, x))
         y = self.get_class_label(image_path.split('/')[-1])
         y = torch.as_tensor(self.labeltoid[y])
         if self.transform is not None:

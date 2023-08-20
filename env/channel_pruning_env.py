@@ -416,9 +416,6 @@ class ChannelPruningEnv:
             for i_b, (input, target) in enumerate(self.train_loader):  # use image from train set
                 if i_b == self.n_calibration_batches:
                     break
-                # print(len(target))
-                print(target)
-                print(input)
                 input_copy = [i.clone() for i in input]
                 target_copy = [t.clone() for t in target]
                 self.data_saver.append((input_copy, target_copy))
