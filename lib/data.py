@@ -36,9 +36,8 @@ class MyDataset(Dataset):
             y = IMAGENET2012_CLASSES[image_path.split('/')[-1].split('_')[0]]
         else:
             y = IMAGENET2012_CLASSES[image_path.split('_')[-1].split('.')[0]]
-        label_id = self.labeltoid[y]
-        y = torch.zeros(1000)
-        y[label_id] = 1
+        y = self.labeltoid[y]
+        y = torch.tensor(y)
         if self.transform is not None:
             x = self.transform(x)
             x = x.convert_to_tensors('pt')
