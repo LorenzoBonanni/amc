@@ -570,7 +570,7 @@ class ChannelPruningEnv:
                 target = target.cuda(non_blocking=True)
                 input_var = torch.autograd.Variable(input).cuda()
                 target_var = torch.autograd.Variable(target).cuda()
-
+                input_var = input_var.squeeze(1)
                 # compute output
                 output = model(input_var)
                 loss = criterion(output, target_var)
