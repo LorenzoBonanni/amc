@@ -19,11 +19,12 @@ from lib.classes import IMAGENET2012_CLASSES
 
 
 class MyDataset(Dataset):
-    def __init__(self, image_paths, transform=None):
+    def __init__(self, image_paths, labeltoid, transform=None):
         self.base_path = image_paths
         self.image_names = os.listdir(image_paths)
         self.transform = transform
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.labeltoid = labeltoid
 
     def get_class_label(self, image_name):
         label_id = image_name.split('_')[0]
@@ -36,6 +37,8 @@ class MyDataset(Dataset):
         y = self.get_class_label(image_path.split('/')[-1])
         if self.transform is not None:
             x = self.transform(x)
+        x = x.convert_to_tensors(tensor_type=torch.double)
+        y = torch.as_tensor(self.labeltoid(y))
         return x, y
 
     def __len__(self):
@@ -91,7 +94,7 @@ def get_dataset(dset_name, batch_size, n_worker, data_root='../../data'):
     return train_loader, val_loader, n_class
 
 
-def get_split_dataset(dset_name, batch_size, n_worker, val_size, data_root='../data',
+def get_split_dataset(net, dset_name, batch_size, n_worker, val_size, data_root='../data',
                       use_real_val=True, shuffle=True):
     '''
         split the train set into train / val for rl search
@@ -148,8 +151,8 @@ def get_split_dataset(dset_name, batch_size, n_worker, val_size, data_root='../d
         train_dir = os.path.join(data_root, 'train')
         val_dir = os.path.join(data_root, 'val')
         transform = EfficientNetImageProcessor.from_pretrained("google/efficientnet-b4")
-        train_dataset = MyDataset(train_dir, transform)
-        val_dataset = MyDataset(val_dir, transform)
+        train_dataset = MyDataset(train_dir, transform, net.config.label2id)
+        val_dataset = MyDataset(val_dir, transform, net.config.label2id)
 
         train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, num_workers=n_worker,
                                                    pin_memory=True, shuffle=True)

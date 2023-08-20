@@ -321,7 +321,7 @@ class ChannelPruningEnv:
         # for CIFAR, split 5k for val
         # for ImageNet, split 3k for val
         val_size = 5000 if 'cifar' in self.data_type else 3000
-        self.train_loader, self.val_loader, n_class = get_split_dataset(self.data_type, self.batch_size,
+        self.train_loader, self.val_loader, n_class = get_split_dataset(self.model, self.data_type, self.batch_size,
                                                                         self.n_data_worker, val_size,
                                                                         data_root=self.data_root,
                                                                         use_real_val=self.use_real_val,
@@ -416,6 +416,8 @@ class ChannelPruningEnv:
             for i_b, (input, target) in enumerate(self.train_loader):  # use image from train set
                 if i_b == self.n_calibration_batches:
                     break
+                print(len(target))
+                print(type(input))
                 self.data_saver.append((input.clone(), target.clone()))
                 input_var = torch.autograd.Variable(input).cuda()
 
