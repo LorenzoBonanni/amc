@@ -228,6 +228,7 @@ class ChannelPruningEnv:
         masked_X = X[:, mask]
         if weight.shape[2] == 1:  # 1x1 conv or fc
             from lib.utils import least_square_sklearn
+            print(op)
             rec_weight = least_square_sklearn(X=masked_X, Y=Y)
             rec_weight = rec_weight.reshape(-1, 1, 1, d_prime)  # (C_out, K_h, K_w, C_in')
             rec_weight = np.transpose(rec_weight, (0, 3, 1, 2))  # (C_out, C_in', K_h, K_w)

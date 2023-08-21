@@ -77,7 +77,8 @@ def accuracy(output, target, topk=(1,)):
 
     res = []
     for k in topk:
-        correct_k = correct[:k].view(-1).float().sum(0)
+        copy_correct_k = correct[:k].clone()
+        correct_k = copy_correct_k.reshape(-1).float().sum(0)
         res.append(correct_k.mul_(100.0 / batch_size))
     return res + appendices
 
@@ -137,6 +138,7 @@ def measure_layer_for_pruning(layer, x):
 def least_square_sklearn(X, Y):
     from sklearn.linear_model import LinearRegression
     reg = LinearRegression(fit_intercept=False)
+    print(X)
     reg.fit(X, Y)
     return reg.coef_
 

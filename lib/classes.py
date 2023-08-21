@@ -534,7 +534,7 @@ IMAGENET2012_CLASSES = OrderedDict(
         "n03124043": "cowboy boot",
         "n03124170": "cowboy hat, ten-gallon hat",
         "n03125729": "cradle",
-        "n03126707": "crane2",
+        "n03126707": "crane",
         "n03127747": "crash helmet",
         "n03127925": "crate",
         "n03131574": "crib, cot",
