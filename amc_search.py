@@ -99,10 +99,9 @@ def get_model_and_checkpoint(model, dataset, checkpoint_path, n_gpu=1):
     #     sd = sd['state_dict']
     # sd = {k.replace('module.', ''): v for k, v in sd.items()}
     # net.load_state_dict(sd)
-    net = net.cuda()
     if n_gpu > 1:
         net = torch.nn.DataParallel(net, range(n_gpu))
-
+    net = net.cuda()
     return net, deepcopy(net.state_dict())
 
 
