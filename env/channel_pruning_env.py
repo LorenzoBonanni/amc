@@ -2,16 +2,16 @@
 # Yihui He*, Ji Lin*, Zhijian Liu, Hanrui Wang, Li-Jia Li, Song Han
 # {jilin, songhan}@mit.edu
 
-import time
-import torch
-import torch.nn as nn
-from lib.utils import AverageMeter, accuracy, prGreen, progress_bar
-from lib.data import get_split_dataset
-from env.rewards import *
+import copy
 import math
+import time
 
 import numpy as np
-import copy
+import torch
+import torch.nn as nn
+from tqdm import tqdm_notebook as tqdm
+from lib.data import get_split_dataset
+from lib.utils import AverageMeter, accuracy, prGreen
 
 
 class ChannelPruningEnv:
@@ -566,7 +566,7 @@ class ChannelPruningEnv:
 
         t1 = time.time()
         with torch.no_grad():
-            for i, (input, target) in enumerate(val_loader):
+            for i, (input, target) in enumerate(tqdm(val_loader)):
                 target = target.cuda(non_blocking=True)
                 input_var = torch.autograd.Variable(input).cuda()
                 target_var = torch.autograd.Variable(target).cuda()
@@ -584,8 +584,6 @@ class ChannelPruningEnv:
                 # measure elapsed time
                 batch_time.update(time.time() - end)
                 end = time.time()
-                progress_bar(i, len(val_loader), 'Loss: {:.3f} | Acc1: {:.3f}% | Acc5: {:.3f}%'
-                             .format(losses.avg, top1.avg, top5.avg))
         t2 = time.time()
         if verbose:
             print('* Test loss: %.3f    top1: %.3f    top5: %.3f    time: %.3f' %
