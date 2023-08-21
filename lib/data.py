@@ -11,6 +11,7 @@ import torch.optim
 import torch.utils.data
 import torchvision
 import torchvision.transforms as transforms
+from torch.nn import DataParallel
 from torch.utils.data import Dataset
 from torch.utils.data.sampler import SubsetRandomSampler
 from transformers import EfficientNetImageProcessor
@@ -154,8 +155,9 @@ def get_split_dataset(net, dset_name, batch_size, n_worker, val_size, data_root=
         train_dir = os.path.join(data_root, 'train')
         val_dir = os.path.join(data_root, 'val')
         transform = EfficientNetImageProcessor.from_pretrained("google/efficientnet-b4")
-        train_dataset = MyDataset(image_paths=train_dir, transform=transform, labeltoid=net.config.label2id)
-        val_dataset = MyDataset(image_paths=val_dir, transform=transform, labeltoid=net.config.label2id)
+        labeltoid = net.config.label2id if not isinstance(net, DataParallel) else net.model.config.label2id
+        train_dataset = MyDataset(image_paths=train_dir, transform=transform, labeltoid=labeltoid)
+        val_dataset = MyDataset(image_paths=val_dir, transform=transform, labeltoid=labeltoid)
 
         train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, num_workers=n_worker,
                                                    pin_memory=True, shuffle=True)

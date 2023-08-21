@@ -138,7 +138,6 @@ def measure_layer_for_pruning(layer, x):
 def least_square_sklearn(X, Y):
     from sklearn.linear_model import LinearRegression
     reg = LinearRegression(fit_intercept=False)
-    print(X)
     reg.fit(X, Y)
     return reg.coef_
 
