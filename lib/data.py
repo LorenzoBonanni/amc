@@ -155,7 +155,7 @@ def get_split_dataset(net, dset_name, batch_size, n_worker, val_size, data_root=
         train_dir = os.path.join(data_root, 'train')
         val_dir = os.path.join(data_root, 'val')
         transform = EfficientNetImageProcessor.from_pretrained("google/efficientnet-b4")
-        labeltoid = net.config.label2id if not isinstance(net, DataParallel) else net.model.config.label2id
+        labeltoid = net.config.label2id if not isinstance(net, DataParallel) else net.module.config.label2id
         train_dataset = MyDataset(image_paths=train_dir, transform=transform, labeltoid=labeltoid)
         val_dataset = MyDataset(image_paths=val_dir, transform=transform, labeltoid=labeltoid)
 
