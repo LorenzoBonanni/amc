@@ -5,7 +5,7 @@
 import time
 import torch
 import torch.nn as nn
-from lib.utils import AverageMeter, accuracy, prGreen
+from lib.utils import AverageMeter, accuracy, prGreen, progress_bar
 from lib.data import get_split_dataset
 from env.rewards import *
 import math
@@ -584,6 +584,8 @@ class ChannelPruningEnv:
                 # measure elapsed time
                 batch_time.update(time.time() - end)
                 end = time.time()
+                progress_bar(i, len(val_loader), 'Loss: {:.3f} | Acc1: {:.3f}% | Acc5: {:.3f}%'
+                             .format(losses.avg, top1.avg, top5.avg))
         t2 = time.time()
         if verbose:
             print('* Test loss: %.3f    top1: %.3f    top5: %.3f    time: %.3f' %
