@@ -9,7 +9,7 @@ import time
 import numpy as np
 import torch
 import torch.nn as nn
-from tqdm import tqdm_notebook as tqdm
+from tqdm.notebook import tqdm
 from lib.data import get_split_dataset
 from lib.utils import AverageMeter, accuracy, prGreen
 
