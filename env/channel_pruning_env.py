@@ -10,6 +10,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 from tqdm.notebook import tqdm
+
+from env.rewards import acc_reward, acc_flops_reward
 from lib.data import get_split_dataset
 from lib.utils import AverageMeter, accuracy, prGreen
 
@@ -76,8 +78,7 @@ class ChannelPruningEnv:
 
         self.expected_preserve_computation = self.preserve_ratio * self.org_flops
 
-        self.reward = eval(args.reward)
-
+        self.reward = acc_reward if args.reward == 'acc_reward' else acc_flops_reward
         self.best_reward = -math.inf
         self.best_strategy = None
         self.best_d_prime_list = None
