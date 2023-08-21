@@ -158,7 +158,10 @@ def get_split_dataset(net, dset_name, batch_size, n_worker, val_size, data_root=
         labeltoid = net.config.label2id if not isinstance(net, DataParallel) else net.module.config.label2id
         train_dataset = MyDataset(image_paths=train_dir, transform=transform, labeltoid=labeltoid)
         val_dataset = MyDataset(image_paths=val_dir, transform=transform, labeltoid=labeltoid)
-
+        val_size = 0.4  # 10% of the data
+        num_samples = len(val_dataset)
+        val_indices = np.random.choice(num_samples, int(num_samples * val_size), replace=False)
+        val_dataset = torch.utils.data.Subset(val_dataset, val_indices)
         train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, num_workers=n_worker,
                                                    pin_memory=True, shuffle=True)
         val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, num_workers=n_worker,
