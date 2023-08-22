@@ -442,8 +442,8 @@ class ChannelPruningEnv:
                             f_in2save, f_out2save = f_in_np, f_out_np
                         else:  # 1x1 conv
                             # assert f_out_np.shape[2] == f_in_np.shape[2]  # now support k=3
-                            randx = torch.randint(0, f_out_np.shape[2] - 0, self.n_points_per_layer)
-                            randy = torch.randint(0, f_out_np.shape[3] - 0, self.n_points_per_layer)
+                            randx = torch.randint(0, f_out_np.shape[2] - 0, (self.n_points_per_layer,))
+                            randy = torch.randint(0, f_out_np.shape[3] - 0, (self.n_points_per_layer,))
                             # input: [N, C, H, W]
                             self.layer_info_dict[idx][(i_b, 'randx')] = randx.clone()
                             self.layer_info_dict[idx][(i_b, 'randy')] = randy.clone()
