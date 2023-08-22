@@ -87,18 +87,16 @@ def get_model_and_checkpoint(model, dataset, checkpoint_path, n_gpu=1):
     elif model == 'mobilenetv2' and dataset == 'imagenet':
         from models.mobilenet_v2 import MobileNetV2
         net = MobileNetV2(n_class=1000)
-    elif model == 'efficentnet_b4' and dataset == 'imagenet':
-        # net = torch.hub.load('NVIDIA/DeepLearningExamples:torchhub', 'nvidia_efficientnet_b4', pretrained=True)
-        net = EfficientNetForImageClassification.from_pretrained("google/efficientnet-b4")
-        # utils = torch.hub.load('NVIDIA/DeepLearningExamples:torchhub', 'nvidia_convnets_processing_utils')
-        # print(utils)
+    elif 'efficentnet' in model and dataset == 'imagenet':
+        net = EfficientNetForImageClassification.from_pretrained(f"google/{model}")
     else:
         raise NotImplementedError
-    # sd = torch.load(checkpoint_path)
-    # if 'state_dict' in sd:  # a checkpoint but not a state_dict
-    #     sd = sd['state_dict']
-    # sd = {k.replace('module.', ''): v for k, v in sd.items()}
-    # net.load_state_dict(sd)
+    if checkpoint_path is not None:
+        sd = torch.load(checkpoint_path)
+        if 'state_dict' in sd:  # a checkpoint but not a state_dict
+            sd = sd['state_dict']
+        sd = {k.replace('module.', ''): v for k, v in sd.items()}
+        net.load_state_dict(sd)
     if n_gpu > 1:
         net = torch.nn.DataParallel(net, range(n_gpu))
     net = net.cuda()
