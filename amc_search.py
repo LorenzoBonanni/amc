@@ -215,6 +215,8 @@ def export_model(env, args):
 
 
 if __name__ == "__main__":
+    import warnings
+    warnings.filterwarnings("ignore")
     args = parse_args()
 
     if args.seed is not None:

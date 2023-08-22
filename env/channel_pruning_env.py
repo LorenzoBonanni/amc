@@ -385,6 +385,94 @@ class ChannelPruningEnv:
         self.visited = [False] * len(self.prunable_idx)
         self.index_buffer = {}
 
+    # def _extract_layer_information(self):
+    #     m_list = list(self.model.modules())
+    #
+    #     self.data_saver = []
+    #     self.layer_info_dict = dict()
+    #     self.wsize_list = []
+    #     self.flops_list = []
+    #
+    #     from lib.utils import measure_layer_for_pruning
+    #
+    #     # extend the forward fn to record layer info
+    #     def new_forward(m):
+    #         def lambda_forward(x):
+    #             m.input_feat = x.clone()
+    #             measure_layer_for_pruning(m, x)
+    #             y = m.old_forward(x)
+    #             m.output_feat = y.clone()
+    #             return y
+    #
+    #         return lambda_forward
+    #
+    #     for idx in self.prunable_idx + self.buffer_idx:  # get all
+    #         m = m_list[idx]
+    #         m.old_forward = m.forward
+    #         m.forward = new_forward(m)
+    #
+    #     # now let the image flow
+    #     print('=> Extracting information...')
+    #     with torch.no_grad():
+    #         for i_b, (input, target) in enumerate(self.train_loader):  # use image from train set
+    #             if i_b % 10 == 0:
+    #                 print(f"\t=>BATCH {i_b}/{self.n_calibration_batches}")
+    #             if i_b == self.n_calibration_batches:
+    #                 break
+    #             self.data_saver.append((input.clone(), target.clone()))
+    #             input_var = torch.autograd.Variable(input).cuda()
+    #             input_var = input_var.squeeze(1)
+    #             # inference and collect stats
+    #             _ = self.model(input_var)
+    #
+    #             if i_b == 0:  # first batch
+    #                 for idx in self.prunable_idx + self.buffer_idx:
+    #                     self.layer_info_dict[idx] = dict()
+    #                     self.layer_info_dict[idx]['params'] = m_list[idx].params
+    #                     self.layer_info_dict[idx]['flops'] = m_list[idx].flops
+    #                     self.wsize_list.append(m_list[idx].params)
+    #                     self.flops_list.append(m_list[idx].flops)
+    #             for idx in self.prunable_idx:
+    #                 f_in_np = m_list[idx].input_feat.data
+    #                 f_out_np = m_list[idx].output_feat.data
+    #                 if len(f_in_np.shape) == 4:  # conv
+    #                     if self.prunable_idx.index(idx) == 0:  # first conv
+    #                         f_in2save, f_out2save = None, None
+    #                     elif m_list[idx].weight.size(3) > 1:  # normal conv
+    #                         f_in2save, f_out2save = torch.from_numpy(f_in_np), torch.from_numpy(f_out_np)
+    #                     else:  # 1x1 conv
+    #                         # assert f_out_np.shape[2] == f_in_np.shape[2]  # now support k=3
+    #                         randx = torch.randint(0, f_out_np.shape[2] - 0, (self.n_points_per_layer,))
+    #                         randy = torch.randint(0, f_out_np.shape[3] - 0, (self.n_points_per_layer,))
+    #                         # input: [N, C, H, W]
+    #                         self.layer_info_dict[idx][(i_b, 'randx')] = randx.clone()
+    #                         self.layer_info_dict[idx][(i_b, 'randy')] = randy.clone()
+    #
+    #                         f_in2save = f_in_np[:, :, randx, randy].detach().cpu().numpy().copy().transpose(0, 2, 1)\
+    #                             .reshape(self.batch_size * self.n_points_per_layer, -1)
+    #
+    #                         f_out2save = f_out_np[:, :, randx, randy].detach().cpu().numpy().transpose(0, 2, 1) \
+    #                             .reshape(self.batch_size * self.n_points_per_layer, -1)
+    #                         f_in2save = torch.from_numpy(f_in2save)
+    #                         f_out2save = torch.from_numpy(f_out2save)
+    #                 else:
+    #                     assert len(f_in_np.shape) == 2
+    #                     f_in2save = f_in_np.clone()
+    #                     f_out2save = f_out_np.clone()
+    #
+    #                 print(self.layer_info_dict[idx])
+    #                 if 'input_feat' not in self.layer_info_dict[idx]:
+    #                     self.layer_info_dict[idx]['input_feat'] = f_in2save
+    #                     self.layer_info_dict[idx]['output_feat'] = f_out2save
+    #                 else:
+    #                     print(f"self.layer_info_dict[idx]['input_feat']: {type(self.layer_info_dict[idx]['input_feat'])}")
+    #                     print(f"f_in2save: {type(f_in2save)}")
+    #                     self.layer_info_dict[idx]['input_feat'] = torch.vstack(
+    #                         (self.layer_info_dict[idx]['input_feat'], f_in2save))
+    #                     self.layer_info_dict[idx]['output_feat'] = torch.vstack(
+    #                         (self.layer_info_dict[idx]['output_feat'], f_out2save))
+
+
     def _extract_layer_information(self):
         m_list = list(self.model.modules())
 
@@ -433,32 +521,30 @@ class ChannelPruningEnv:
                         self.wsize_list.append(m_list[idx].params)
                         self.flops_list.append(m_list[idx].flops)
                 for idx in self.prunable_idx:
-                    f_in_np = m_list[idx].input_feat.data
-                    f_out_np = m_list[idx].output_feat.data
+                    f_in_np = m_list[idx].input_feat.data.cpu().numpy()
+                    f_out_np = m_list[idx].output_feat.data.cpu().numpy()
                     if len(f_in_np.shape) == 4:  # conv
                         if self.prunable_idx.index(idx) == 0:  # first conv
                             f_in2save, f_out2save = None, None
                         elif m_list[idx].weight.size(3) > 1:  # normal conv
-                            f_in2save, f_out2save = torch.from_numpy(f_in_np), torch.from_numpy(f_out_np)
+                            f_in2save, f_out2save = f_in_np, f_out_np
                         else:  # 1x1 conv
                             # assert f_out_np.shape[2] == f_in_np.shape[2]  # now support k=3
-                            randx = torch.randint(0, f_out_np.shape[2] - 0, (self.n_points_per_layer,))
-                            randy = torch.randint(0, f_out_np.shape[3] - 0, (self.n_points_per_layer,))
+                            randx = np.random.randint(0, f_out_np.shape[2] - 0, self.n_points_per_layer)
+                            randy = np.random.randint(0, f_out_np.shape[3] - 0, self.n_points_per_layer)
                             # input: [N, C, H, W]
-                            self.layer_info_dict[idx][(i_b, 'randx')] = randx.clone()
-                            self.layer_info_dict[idx][(i_b, 'randy')] = randy.clone()
+                            self.layer_info_dict[idx][(i_b, 'randx')] = randx.copy()
+                            self.layer_info_dict[idx][(i_b, 'randy')] = randy.copy()
 
-                            f_in2save = f_in_np[:, :, randx, randy].detach().cpu().numpy().copy().transpose(0, 2, 1)\
+                            f_in2save = f_in_np[:, :, randx, randy].copy().transpose(0, 2, 1)\
                                 .reshape(self.batch_size * self.n_points_per_layer, -1)
 
-                            f_out2save = f_out_np[:, :, randx, randy].detach().cpu().numpy().transpose(0, 2, 1) \
+                            f_out2save = f_out_np[:, :, randx, randy].copy().transpose(0, 2, 1) \
                                 .reshape(self.batch_size * self.n_points_per_layer, -1)
-                            f_in2save = torch.from_numpy(f_in2save)
-                            f_out2save = torch.from_numpy(f_out2save)
                     else:
                         assert len(f_in_np.shape) == 2
-                        f_in2save = f_in_np.clone()
-                        f_out2save = f_out_np.clone()
+                        f_in2save = f_in_np.copy()
+                        f_out2save = f_out_np.copy()
 
                     print(self.layer_info_dict[idx])
                     if 'input_feat' not in self.layer_info_dict[idx]:
@@ -467,9 +553,9 @@ class ChannelPruningEnv:
                     else:
                         print(f"self.layer_info_dict[idx]['input_feat']: {type(self.layer_info_dict[idx]['input_feat'])}")
                         print(f"f_in2save: {type(f_in2save)}")
-                        self.layer_info_dict[idx]['input_feat'] = torch.vstack(
+                        self.layer_info_dict[idx]['input_feat'] = np.vstack(
                             (self.layer_info_dict[idx]['input_feat'], f_in2save))
-                        self.layer_info_dict[idx]['output_feat'] = torch.vstack(
+                        self.layer_info_dict[idx]['output_feat'] = np.vstack(
                             (self.layer_info_dict[idx]['output_feat'], f_out2save))
 
     def _regenerate_input_feature(self):
