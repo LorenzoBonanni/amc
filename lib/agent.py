@@ -3,13 +3,13 @@
 # {jilin, songhan}@mit.edu
 
 import numpy as np
-
 import torch
 import torch.nn as nn
+import torchrl
 from torch.optim import Adam
 
 from lib.memory import SequentialMemory
-from lib.utils import to_numpy, to_tensor
+from lib.utils import to_tensor
 
 criterion = nn.MSELoss()
 USE_CUDA = torch.cuda.is_available()
@@ -110,7 +110,7 @@ class DDPG(object):
     def update_policy(self):
         # Sample batch
         state_batch, action_batch, reward_batch, \
-        next_state_batch, terminal_batch = self.memory.sample_and_split(self.batch_size)
+            next_state_batch, terminal_batch = self.memory.sample_and_split(self.batch_size)
 
         # normalize the reward
         batch_mean_reward = np.mean(reward_batch)
@@ -130,7 +130,7 @@ class DDPG(object):
             ])
 
         target_q_batch = to_tensor(reward_batch) + \
-                         self.discount * to_tensor(terminal_batch.astype(np.float)) * next_q_values
+                         self.discount * to_tensor(terminal_batch.astype(np.float64)) * next_q_values
 
         # Critic update
         self.critic.zero_grad()
@@ -175,17 +175,18 @@ class DDPG(object):
             # self.s_t = s_t1
 
     def random_action(self):
-        action = np.random.uniform(self.lbound, self.rbound, self.nb_actions)
+        action = torch.FloatTensor(self.nb_actions).uniform_(self.lbound, self.rbound)
         # self.a_t = action
         return action
 
     def select_action(self, s_t, episode):
         # assert episode >= self.warmup, 'Episode: {} warmup: {}'.format(episode, self.warmup)
-        action = to_numpy(self.actor(to_tensor(np.array(s_t).reshape(1, -1)))).squeeze(0)
+        action = self.actor(s_t.reshape(1, -1)).squeeze(0)
         delta = self.init_delta * (self.delta_decay ** (episode - self.warmup))
         # action += self.is_training * max(self.epsilon, 0) * self.random_process.sample()
-        action = self.sample_from_truncated_normal_distribution(lower=self.lbound, upper=self.rbound, mu=action, sigma=delta)
-        action = np.clip(action, self.lbound, self.rbound)
+        action = self.sample_from_truncated_normal_distribution(lower=self.lbound, upper=self.rbound, mu=action,
+                                                                sigma=delta)
+        action = torch.clip(action, self.lbound, self.rbound)
 
         # self.a_t = action
         return action
@@ -227,7 +228,9 @@ class DDPG(object):
             target_param.data.copy_(param.data)
 
     def sample_from_truncated_normal_distribution(self, lower, upper, mu, sigma, size=1):
-        from scipy import stats
-        return stats.truncnorm.rvs((lower-mu)/sigma, (upper-mu)/sigma, loc=mu, scale=sigma, size=size)
-
-
+        return torchrl.modules.TruncatedNormal(
+            loc=torch.Tensor(np.array([mu])),
+            scale=torch.Tensor(np.array([sigma])),
+            min=(lower - mu) / sigma,
+            max=(upper - mu) / sigma
+        ).sample()

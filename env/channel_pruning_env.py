@@ -13,7 +13,7 @@ from tqdm.notebook import tqdm
 
 from env.rewards import acc_reward, acc_flops_reward
 from lib.data import get_split_dataset
-from lib.utils import AverageMeter, accuracy, prGreen
+from lib.utils import AverageMeter, accuracy, prGreen, to_tensor
 
 
 class ChannelPruningEnv:
@@ -167,7 +167,7 @@ class ChannelPruningEnv:
         self.layer_embedding[:, -1] = 1.
         self.layer_embedding[:, -2] = 0.
         self.layer_embedding[:, -3] = 0.
-        obs = self.layer_embedding[0].copy()
+        obs = self.layer_embedding[0].clone()
         obs[-2] = sum(self.wsize_list[1:]) * 1. / sum(self.wsize_list)
         self.extract_time = 0
         self.fit_time = 0
@@ -433,8 +433,8 @@ class ChannelPruningEnv:
                         self.wsize_list.append(m_list[idx].params)
                         self.flops_list.append(m_list[idx].flops)
                 for idx in self.prunable_idx:
-                    f_in_np = m_list[idx].input_feat.data.cpu().numpy()
-                    f_out_np = m_list[idx].output_feat.data.cpu().numpy()
+                    f_in_np = m_list[idx].input_feat.data
+                    f_out_np = m_list[idx].output_feat.data
                     if len(f_in_np.shape) == 4:  # conv
                         if self.prunable_idx.index(idx) == 0:  # first conv
                             f_in2save, f_out2save = None, None
@@ -442,21 +442,23 @@ class ChannelPruningEnv:
                             f_in2save, f_out2save = f_in_np, f_out_np
                         else:  # 1x1 conv
                             # assert f_out_np.shape[2] == f_in_np.shape[2]  # now support k=3
-                            randx = np.random.randint(0, f_out_np.shape[2] - 0, self.n_points_per_layer)
-                            randy = np.random.randint(0, f_out_np.shape[3] - 0, self.n_points_per_layer)
+                            randx = torch.randint(0, f_out_np.shape[2] - 0, self.n_points_per_layer)
+                            randy = torch.randint(0, f_out_np.shape[3] - 0, self.n_points_per_layer)
                             # input: [N, C, H, W]
-                            self.layer_info_dict[idx][(i_b, 'randx')] = randx.copy()
-                            self.layer_info_dict[idx][(i_b, 'randy')] = randy.copy()
+                            self.layer_info_dict[idx][(i_b, 'randx')] = randx.clone()
+                            self.layer_info_dict[idx][(i_b, 'randy')] = randy.clone()
 
-                            f_in2save = f_in_np[:, :, randx, randy].copy().transpose(0, 2, 1)\
+                            f_in2save = f_in_np[:, :, randx, randy].detach().cpu().numpy().copy().transpose(0, 2, 1)\
                                 .reshape(self.batch_size * self.n_points_per_layer, -1)
 
-                            f_out2save = f_out_np[:, :, randx, randy].copy().transpose(0, 2, 1) \
+                            f_out2save = f_out_np[:, :, randx, randy].detach().cpu().numpy().transpose(0, 2, 1) \
                                 .reshape(self.batch_size * self.n_points_per_layer, -1)
+                            f_in2save = torch.from_numpy(f_in2save)
+                            f_out2save = torch.from_numpy(f_out2save)
                     else:
                         assert len(f_in_np.shape) == 2
-                        f_in2save = f_in_np.copy()
-                        f_out2save = f_out_np.copy()
+                        f_in2save = f_in_np.clone()
+                        f_out2save = f_out_np.clone()
                     if 'input_feat' not in self.layer_info_dict[idx]:
                         self.layer_info_dict[idx]['input_feat'] = f_in2save
                         self.layer_info_dict[idx]['output_feat'] = f_out2save
@@ -544,7 +546,7 @@ class ChannelPruningEnv:
             if fmax - fmin > 0:
                 layer_embedding[:, i] = (layer_embedding[:, i] - fmin) / (fmax - fmin)
 
-        self.layer_embedding = layer_embedding
+        self.layer_embedding = to_tensor(layer_embedding)
 
     def _validate(self, val_loader, model, verbose=True):
         '''

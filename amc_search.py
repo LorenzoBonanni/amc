@@ -4,6 +4,7 @@
 
 import argparse
 import os
+import random
 from copy import deepcopy
 
 import numpy as np
@@ -112,8 +113,7 @@ def train(num_episode, agent, env, output):
     while episode < num_episode:  # counting based on episode
         # reset if it is the start of episode
         if observation is None:
-            observation = deepcopy(env.reset())
-            agent.reset(observation)
+            observation = env.reset().clone()
 
         # agent pick action ...
         if episode <= args.warmup:
@@ -124,7 +124,12 @@ def train(num_episode, agent, env, output):
 
         # env response with next_observation, reward, terminate_info
         observation2, reward, done, info = env.step(action)
-        observation2 = deepcopy(observation2)
+
+        print(type(observation2))
+        print(type(reward))
+        print(type(done))
+        print(type(info))
+        exit(0)
 
         T.append([reward, deepcopy(observation), deepcopy(observation2), action, done])
 

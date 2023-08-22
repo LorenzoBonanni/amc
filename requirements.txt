@@ -7,4 +7,4 @@ torchvision==0.15.2
 validators==0.20.0
 transformers~=4.31.0
 Pillow~=10.0.0
-tqdm~=4.65.0
+torchrl~=0.1.1

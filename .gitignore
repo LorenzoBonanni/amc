@@ -241,3 +241,4 @@ cython_debug/
 *.pth.tar
 tiny-imagenet-200/
 imagenet/
+/venv310/
