@@ -463,9 +463,11 @@ class ChannelPruningEnv:
                         self.layer_info_dict[idx]['input_feat'] = f_in2save
                         self.layer_info_dict[idx]['output_feat'] = f_out2save
                     else:
-                        self.layer_info_dict[idx]['input_feat'] = np.vstack(
+                        print(f"self.layer_info_dict[idx]['input_feat']: {type(self.layer_info_dict[idx]['input_feat'])}")
+                        print(f"f_in2save: {type(f_in2save)}")
+                        self.layer_info_dict[idx]['input_feat'] = torch.vstack(
                             (self.layer_info_dict[idx]['input_feat'], f_in2save))
-                        self.layer_info_dict[idx]['output_feat'] = np.vstack(
+                        self.layer_info_dict[idx]['output_feat'] = torch.vstack(
                             (self.layer_info_dict[idx]['output_feat'], f_out2save))
 
     def _regenerate_input_feature(self):
