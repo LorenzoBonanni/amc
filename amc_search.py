@@ -15,7 +15,9 @@ from transformers import EfficientNetForImageClassification
 from env.channel_pruning_env import ChannelPruningEnv
 from lib.agent import DDPG
 from lib.utils import get_output_folder
+import warnings
 
+warnings.filterwarnings("ignore")
 torch.backends.cudnn.deterministic = True
 
 
@@ -215,8 +217,6 @@ def export_model(env, args):
 
 
 if __name__ == "__main__":
-    import warnings
-    warnings.filterwarnings("ignore")
     args = parse_args()
 
     if args.seed is not None:
