@@ -437,7 +437,6 @@ class ChannelPruningEnv:
                     f_out_np = m_list[idx].output_feat.data
                     if len(f_in_np.shape) == 4:  # conv
                         if self.prunable_idx.index(idx) == 0:  # first conv
-                            print("FIRST CONV")
                             f_in2save, f_out2save = None, None
                         elif m_list[idx].weight.size(3) > 1:  # normal conv
                             f_in2save, f_out2save = torch.from_numpy(f_in_np), torch.from_numpy(f_out_np)
@@ -461,6 +460,7 @@ class ChannelPruningEnv:
                         f_in2save = f_in_np.clone()
                         f_out2save = f_out_np.clone()
 
+                    print(self.layer_info_dict[idx])
                     if 'input_feat' not in self.layer_info_dict[idx]:
                         self.layer_info_dict[idx]['input_feat'] = f_in2save
                         self.layer_info_dict[idx]['output_feat'] = f_out2save
