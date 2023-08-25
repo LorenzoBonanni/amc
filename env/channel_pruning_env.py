@@ -9,7 +9,6 @@ import time
 import numpy as np
 import torch
 import torch.nn as nn
-from tqdm.notebook import tqdm
 
 from env.rewards import acc_reward, acc_flops_reward
 from lib.data import get_split_dataset
@@ -20,6 +19,7 @@ class ChannelPruningEnv:
     """
     Env for channel pruning search
     """
+
     def __init__(self, model, checkpoint, data, preserve_ratio, args, n_data_worker=4,
                  batch_size=256, export_model=False, use_new_input=False):
         # default setting
@@ -73,7 +73,7 @@ class ChannelPruningEnv:
         print('=> original weight size: {:.4f} M param'.format(self.org_model_size * 1. / 1e6))
         self.org_flops = sum(self.flops_list)
         print('=> FLOPs:')
-        print([self.layer_info_dict[idx]['flops']/1e6 for idx in sorted(self.layer_info_dict.keys())])
+        print([self.layer_info_dict[idx]['flops'] / 1e6 for idx in sorted(self.layer_info_dict.keys())])
         print('=> original FLOPs: {:.4f} M'.format(self.org_flops * 1. / 1e6))
 
         self.expected_preserve_computation = self.preserve_ratio * self.org_flops
@@ -132,7 +132,8 @@ class ChannelPruningEnv:
                 self.best_reward = reward
                 self.best_strategy = self.strategy.copy()
                 self.best_d_prime_list = self.d_prime_list.copy()
-                prGreen('New best reward: {:.4f}, acc: {:.4f}, compress: {:.4f}'.format(self.best_reward, acc, compress_ratio))
+                prGreen('New best reward: {:.4f}, acc: {:.4f}, compress: {:.4f}'.format(self.best_reward, acc,
+                                                                                        compress_ratio))
                 prGreen('New best policy: {}'.format(self.best_strategy))
                 prGreen('New best d primes: {}'.format(self.best_d_prime_list))
 
@@ -472,7 +473,6 @@ class ChannelPruningEnv:
     #                     self.layer_info_dict[idx]['output_feat'] = torch.vstack(
     #                         (self.layer_info_dict[idx]['output_feat'], f_out2save))
 
-
     def _extract_layer_information(self):
         m_list = list(self.model.modules())
 
@@ -533,10 +533,10 @@ class ChannelPruningEnv:
                             randx = np.random.randint(0, f_out_np.shape[2] - 0, self.n_points_per_layer)
                             randy = np.random.randint(0, f_out_np.shape[3] - 0, self.n_points_per_layer)
                             # input: [N, C, H, W]
-                            self.layer_info_dict[idx][(i_b, 'randx')] = randx.copy()
-                            self.layer_info_dict[idx][(i_b, 'randy')] = randy.copy()
+                            self.layer_info_dict[idx][(i_b, 'randx')] = to_tensor(randx.copy())
+                            self.layer_info_dict[idx][(i_b, 'randy')] = to_tensor(randy.copy())
 
-                            f_in2save = f_in_np[:, :, randx, randy].copy().transpose(0, 2, 1)\
+                            f_in2save = f_in_np[:, :, randx, randy].copy().transpose(0, 2, 1) \
                                 .reshape(self.batch_size * self.n_points_per_layer, -1)
 
                             f_out2save = f_out_np[:, :, randx, randy].copy().transpose(0, 2, 1) \
@@ -546,18 +546,14 @@ class ChannelPruningEnv:
                         f_in2save = f_in_np.copy()
                         f_out2save = f_out_np.copy()
 
-                    if f_in2save is None:
-                        print(self.layer_info_dict[idx])
-                        exit(0)
                     if 'input_feat' not in self.layer_info_dict[idx]:
-                        self.layer_info_dict[idx]['input_feat'] = f_in2save
-                        self.layer_info_dict[idx]['output_feat'] = f_out2save
+                        self.layer_info_dict[idx]['input_feat'] = to_tensor(f_in2save)
+                        self.layer_info_dict[idx]['output_feat'] = to_tensor(f_out2save)
                     else:
-
-                        self.layer_info_dict[idx]['input_feat'] = np.vstack(
-                            (self.layer_info_dict[idx]['input_feat'], f_in2save))
-                        self.layer_info_dict[idx]['output_feat'] = np.vstack(
-                            (self.layer_info_dict[idx]['output_feat'], f_out2save))
+                        self.layer_info_dict[idx]['input_feat'] = to_tensor(np.vstack(
+                            (self.layer_info_dict[idx]['input_feat'], f_in2save)))
+                        self.layer_info_dict[idx]['output_feat'] = to_tensor(np.vstack(
+                            (self.layer_info_dict[idx]['output_feat'], f_out2save)))
 
     def _regenerate_input_feature(self):
         # only re-generate the input feature
@@ -586,7 +582,7 @@ class ChannelPruningEnv:
                         else:
                             randx = self.layer_info_dict[idx][(i_b, 'randx')]
                             randy = self.layer_info_dict[idx][(i_b, 'randy')]
-                            f_in2save = f_in_np[:, :, randx, randy].copy().transpose(0, 2, 1)\
+                            f_in2save = f_in_np[:, :, randx, randy].copy().transpose(0, 2, 1) \
                                 .reshape(self.batch_size * self.n_points_per_layer, -1)
                     else:  # fc
                         assert len(f_in_np.shape) == 2
